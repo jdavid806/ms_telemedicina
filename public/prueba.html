@@ -242,27 +242,27 @@
     input:checked+.slider:before {
         transform: translateX(16px);
     }
+
+    /* .local-video {
+        background-color: #ea4335;
+
+    }
+
+    .remote-video {
+        background-color: #4285f4;
+    } */
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
 <div class="main-container">
     <!-- Contenido central -->
     <div class="center-content">
-        <div class="avatar-container">
-            D
-            <div class="avatar-controls">
-                <button class="avatar-control-btn">
-                    <i class="fas fa-thumbtack"></i>
-                </button>
-                <button class="avatar-control-btn">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
+        <div class="video-container">
+            <video id="localVideo" class="local-video" autoplay muted></video>
+            <video id="remoteVideo" class="remote-video" autoplay></video>
         </div>
     </div>
-    <div class="video-container">
-        <video id="localVideo" autoplay muted></video>
-        <video id="remoteVideo" autoplay></video>
-    </div>
+
+
 
     <!-- Información inferior -->
     <div class="bottom-info">
@@ -283,7 +283,11 @@
 
         <div class="control-group">
             <button class="control-button" title="Raise hand">
-                <i class="fas fa-hand-paper"></i>
+                <i class="fas fa-hand-paper">
+                    <button id="startCall" class="control-button" title="Iniciar llamada">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                </i>
             </button>
             <button class="control-button" title="Share screen">
                 <i class="fas fa-share-square"></i>
@@ -330,142 +334,287 @@
                 </button>
             </div>
         </div>
-        
+
     </div>
 
 
 </div>
 
+
 <script>
-const socket = io("http://localhost:3000");
-let roomId = null;
-let peerConnection;
-let localStream;
-const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const socket = io("https://33a8-190-69-48-119.ngrok-free.app");
+    const peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+    
+    const chatInput = document.getElementById("chatInput");
+    const chatMessages = document.getElementById("chatMessages");
+    const localVideo = document.getElementById("localVideo");
+    const remoteVideo = document.getElementById("remoteVideo");
+    const startCallBtn = document.getElementById("startCall");
 
-// ✅ Obtener roomId desde la URL si existe
-const urlParams = new URLSearchParams(window.location.search);
-roomId = urlParams.get("roomId");
+    // 🔹 Definir un roomId (esto se puede generar dinámicamente)
+    const roomId = "mi-sala-123";
+    socket.emit("join-room", roomId); // ✅ Unirse a la sala
+    console.log("📢 Te uniste a la sala:", roomId);
 
-// ✅ Verificar si los elementos existen antes de usarlos
-const chatInput = document.getElementById("chatInput");
-const chatMessages = document.getElementById("chatMessages");
-const roomStatus = document.getElementById("roomStatus");
+    let localStream;
 
-// ✅ Conectar al servidor WebSocket
-socket.on("connect", () => console.log("✅ Conectado con ID:", socket.id));
-socket.on("connect_error", (error) => console.error("❌ Error de conexión:", error));
-
-// ✅ Unirse automáticamente a la sala si existe en la URL
-if (roomId) {
-    if (roomStatus) roomStatus.innerText = `Unido a la sala: ${roomId}`;
-    socket.emit("join-room", roomId);
-}
-
-// ✅ Evento cuando se une a la sala
-socket.on("room-joined", (id) => {
-    roomId = id;
-    if (roomStatus) roomStatus.innerText = `En la sala: ${roomId}`;
-    startCall();
-});
-
-// ✅ Escuchar mensajes de chat
-socket.on("receive-message", ({ message, user }) => {
-    if (chatMessages) {
-        chatMessages.innerHTML += `<p><strong>${user}:</strong> ${message}</p>`;
-        scrollToBottom();
+    async function getMedia() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            console.log("🎥 Cámara y micrófono activados");
+        } catch (error) {
+            console.error("❌ Error al obtener la cámara/micrófono:", error);
+        }
     }
-});
 
-// ✅ Enviar mensaje con Enter
-if (chatInput) {
-    chatInput.addEventListener("keypress", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendMessage();
+    getMedia(); // Iniciar la cámara al cargar
+
+    // 📡 Evento cuando se recibe el stream remoto
+    peerConnection.ontrack = event => {
+        if (!remoteVideo.srcObject) {
+            remoteVideo.srcObject = event.streams[0];
+            console.log("📡 Stream remoto recibido");
+        }
+    };
+
+    // 🧊 Manejo de ICE candidates
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            console.log("📤 Enviando candidato ICE:", event.candidate);
+            socket.emit("candidate", { roomId, candidate: event.candidate });
+        }
+    };
+
+    // 🔗 Estado de conexión WebRTC para depuración
+    peerConnection.onconnectionstatechange = () => {
+        console.log("🔗 Estado de conexión WebRTC:", peerConnection.connectionState);
+    };
+
+    // 📞 Botón para iniciar la llamada
+    startCallBtn.addEventListener("click", async () => {
+        console.log("📞 Iniciando llamada...");
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit("offer", { roomId, offer }); // ✅ Ahora incluye roomId
+        console.log("📤 Oferta enviada:", offer);
+    });
+
+    // 📩 Recibir oferta y responder
+    socket.on("offer", async offer => {
+        console.log("📩 Oferta recibida:", offer);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        socket.emit("answer", { roomId, answer }); // ✅ Ahora incluye roomId
+        console.log("📤 Respuesta enviada:", answer);
+    });
+
+    // 📩 Recibir respuesta
+    socket.on("answer", async answer => {
+        console.log("📩 Respuesta recibida:", answer);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    // 📩 Recibir candidatos ICE
+    socket.on("candidate", async candidate => {
+        console.log("📩 Candidato ICE recibido:", candidate);
+        try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (error) {
+            console.error("❌ Error al agregar candidato ICE:", error);
         }
     });
-}
 
-// ✅ Función para enviar mensaje
-function sendMessage() {
-    if (!chatInput) return;
-    const message = chatInput.value.trim();
-    if (message && roomId) {
+ 
+    socket.on("receive-message", ({ message, user }) => {
+        console.log("📩 Nuevo mensaje recibido:", message, "de", user);
+
+        if (!chatMessages) {
+            console.error("❌ No se encontró el contenedor chatMessages");
+            return;
+        }
+
+
+        chatMessages.innerHTML += `
+            <div class="chat-message">
+                <strong>${user}:</strong> ${message}
+            </div>`;
+        
+        scrollToBottom();
+    });
+
+
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
         socket.emit("send-message", { roomId, message, user: socket.id });
-        chatInput.value = ""; // Limpiar input después de enviar
-    }
-}
+        console.log("📤 Mensaje enviado:", message);
 
-// ✅ Mantener scroll del chat siempre abajo
-function scrollToBottom() {
-    if (chatMessages) {
+ 
+        chatMessages.innerHTML += `
+            <div class="chat-message self">
+                <strong>Tú:</strong> ${message}
+            </div>`;
+        
+        chatInput.value = "";
+        scrollToBottom();
+    }
+
+  
+    function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-}
 
-
-navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then(stream => {
-        localStream = stream;
-        document.getElementById("localVideo").srcObject = stream;
-    })
-    .catch(error => console.error(" Error accediendo a la cámara/micrófono:", error));
-
-// ✅ Iniciar llamada
-async function startCall() {
-    try {
-        if (!localStream) {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            document.getElementById("localVideo").srcObject = localStream;
-        }
-
-        peerConnection = new RTCPeerConnection(servers);
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        peerConnection.ontrack = event => {
-            document.getElementById("remoteVideo").srcObject = event.streams[0];
-        };
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit("ice-candidate", { roomId, candidate: event.candidate });
+    if (chatInput) {
+        chatInput.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                sendMessage();
             }
-        };
-
-        if (!urlParams.get("roomId")) { // ✅ Solo el creador envía la oferta
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            socket.emit("offer", { roomId, offer });
-        }
-    } catch (error) {
-        console.error("❌ Error al iniciar la llamada:", error);
+        });
     }
-}
+</script>
 
-socket.on("offer", async ({ offer }) => {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    socket.emit("answer", { roomId, answer });
-});
+<script>
+    // const socket = io("https://33a8-190-69-48-119.ngrok-free.app");
+    // let roomId = null;
+    // let peerConnection;
+    // let localStream;
+    // const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+    // // Obtener roomId desde la URL si existe
+    // const urlParams = new URLSearchParams(window.location.search);
+    // roomId = urlParams.get("roomId");
+
+    // const chatInput = document.getElementById("chatInput");
+    // const chatMessages = document.getElementById("chatMessages");
+    // const roomStatus = document.getElementById("roomStatus");
+    // const localVideo = document.getElementById("localVideo");
+    // const remoteVideo = document.getElementById("remoteVideo");
+    // const startCallBtn = document.getElementById("startCall");
+    // const toggleMicBtn = document.getElementById("toggleMic");
+    // const toggleCamBtn = document.getElementById("toggleCam");
+
+    // // Conectar al servidor WebSocket
+    // socket.on("connect", () => console.log("✅ Conectado con ID:", socket.id));
+    // socket.on("connect_error", (error) => console.error("Error de conexión:", error));
+
+    // if (roomId) {
+    //     if (roomStatus) roomStatus.innerText = `Unido a la sala: ${roomId}`;
+    //     socket.emit("join-room", roomId);
+    // }
+
+    // socket.on("room-joined", (id) => {
+    //     roomId = id;
+    //     if (roomStatus) roomStatus.innerText = `En la sala: ${roomId}`;
+    //     startCall();
+    // });
+
+    // socket.on("receive-message", ({ message, user }) => {
+    //     if (chatMessages) {
+    //         chatMessages.innerHTML += `<p><strong>${user}:</strong> ${message}</p>`;
+    //         scrollToBottom();
+    //     }
+    // });
 
 
-socket.on("answer", async ({ answer }) => {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-});
+    // if (chatInput) {
+    //     chatInput.addEventListener("keypress", function (event) {
+    //         if (event.key === "Enter") {
+    //             event.preventDefault();
+    //             sendMessage();
+    //         }
+    //     });
+    // }
 
-socket.on("ice-candidate", ({ candidate }) => {
-    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-});
+    // function sendMessage() {
+    //     if (!chatInput) return;
+    //     const message = chatInput.value.trim();
+    //     if (message && roomId) {
+    //         socket.emit("send-message", { roomId, message, user: socket.id });
+    //         chatInput.value = "";
+    //     }
+    // }
+
+    // function scrollToBottom() {
+    //     if (chatMessages) {
+    //         chatMessages.scrollTop = chatMessages.scrollHeight;
+    //     }
+    // }
+
+    // // Obtener acceso a la cámara y micrófono
+    // async function getMedia() {
+    //     try {
+    //         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    //         localVideo.srcObject = localStream;
+    //     } catch (error) {
+    //         console.error("❌ Error al obtener la cámara/micrófono:", error);
+    //     }
+    // }
+    // getMedia();
+
+    // // Iniciar llamada
+    // async function startCall() {
+    //     try {
+    //         if (!localStream) {
+    //             await getMedia();
+    //         }
+
+    //         peerConnection = new RTCPeerConnection(servers);
+    //         localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    //         peerConnection.ontrack = event => {
+    //             remoteVideo.srcObject = event.streams[0];
+    //         };
+
+    //         peerConnection.onicecandidate = event => {
+    //             if (event.candidate) {
+    //                 socket.emit("ice-candidate", { roomId, candidate: event.candidate });
+    //             }
+    //         };
+
+    //         if (!urlParams.get("roomId")) {
+    //             const offer = await peerConnection.createOffer();
+    //             await peerConnection.setLocalDescription(offer);
+    //             socket.emit("offer", { roomId, offer });
+    //         }
+    //     } catch (error) {
+    //         console.error("❌ Error al iniciar la llamada:", error);
+    //     }
+    // }
+
+    // socket.on("offer", async ({ offer }) => {
+    //     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    //     const answer = await peerConnection.createAnswer();
+    //     await peerConnection.setLocalDescription(answer);
+    //     socket.emit("answer", { roomId, answer });
+    // });
+
+    // socket.on("answer", async ({ answer }) => {
+    //     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    // });
+
+    // socket.on("ice-candidate", ({ candidate }) => {
+    //     peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    // });
+
+    // function toggleMic() {
+    //     localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
+    // }
+
+    // function toggleCam() {
+    //     localStream.getVideoTracks()[0].enabled = !localStream.getVideoTracks()[0].enabled;
+    // }
 
 
-function toggleMic() {
-    localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
-}
+    // if (startCallBtn) startCallBtn.addEventListener("click", startCall);
+    // if (toggleMicBtn) toggleMicBtn.addEventListener("click", toggleMic);
+    // if (toggleCamBtn) toggleCamBtn.addEventListener("click", toggleCam);
 
-function toggleCam() {
-    localStream.getVideoTracks()[0].enabled = !localStream.getVideoTracks()[0].enabled;
-}
 
 </script>

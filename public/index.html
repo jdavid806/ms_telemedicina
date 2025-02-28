@@ -1,17 +1,27 @@
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-<button onclick="createRoom()">Crear Sala</button>
+<button onclick="createRoom()">Crear Sala (Doctor)</button>
+<button onclick="joinRoom()">Unirse a Sala (Paciente)</button>
 <p id="roomLink"></p>
 
-
 <script>
-    const socket = io("http://localhost:3000");
+    const socket = io("https://33a8-190-69-48-119.ngrok-free.app");
 
-function createRoom() {
-    socket.emit("create-room");
-}
+    function createRoom() {
+        const role = "doctor";
+        console.log("Rol:", role);
+        socket.emit("create-room", role); 
+    }
 
-socket.on("room-created", (roomId) => {
+    function joinRoom() {
+        const roomId = prompt("Ingresa el ID de la sala:");
+        if (roomId) {
+            const role = "paciente";
+            console.log("Rol:", role);
+            socket.emit("join-room", { roomId, role });
+        }
+    }
+    socket.on("room-created", (roomId) => {
+    console.log("Evento room-created recibido con ID:", roomId); 
     const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}`;
     document.getElementById("roomLink").innerHTML = `
         <a href="${roomLink}" target="_blank">${roomLink}</a>
@@ -19,10 +29,10 @@ socket.on("room-created", (roomId) => {
     `;
 });
 
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert("Enlace copiado");
-    });
-}
 
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Enlace copiado");
+        });
+    }
 </script>
