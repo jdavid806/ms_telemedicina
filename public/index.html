@@ -1,0 +1,28 @@
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+<button onclick="createRoom()">Crear Sala</button>
+<p id="roomLink"></p>
+
+
+<script>
+    const socket = io("http://localhost:3000");
+
+function createRoom() {
+    socket.emit("create-room");
+}
+
+socket.on("room-created", (roomId) => {
+    const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}`;
+    document.getElementById("roomLink").innerHTML = `
+        <a href="${roomLink}" target="_blank">${roomLink}</a>
+        <button onclick="copyToClipboard('${roomLink}')">Copiar</button>
+    `;
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Enlace copiado");
+    });
+}
+
+</script>

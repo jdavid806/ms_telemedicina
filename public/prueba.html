@@ -1,0 +1,471 @@
+<style>
+    :root {
+        --meet-dark: #202124;
+        --meet-red: #ea4335;
+        --meet-purple: #673ab7;
+        --controls-bg: rgba(32, 33, 36, 0.95);
+        --sidebar-width: 320px;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--meet-dark);
+        color: white;
+        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .main-container {
+        height: 100vh;
+        position: relative;
+    }
+
+    /* Área central con avatar */
+    .center-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 80px);
+    }
+
+    .avatar-container {
+        width: 200px;
+        height: 200px;
+        background-color: var(--meet-purple);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 72px;
+        right: 130px;
+        position: relative;
+    }
+
+    .avatar-controls {
+        position: absolute;
+        bottom: -10px;
+        right: -10px;
+        display: flex;
+        gap: 4px;
+    }
+
+    .avatar-control-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(32, 33, 36, 0.8);
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* Información inferior */
+    .bottom-info {
+        position: absolute;
+        bottom: 100px;
+        left: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .meeting-code {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Barra de controles */
+    .controls-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 700px;
+        height: 80px;
+        background-color: var(--controls-bg);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 24px;
+    }
+
+    .control-group {
+        display: flex;
+        gap: 8px;
+    }
+
+    .control-button {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .control-button:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .control-button.red {
+        background-color: var(--meet-red);
+    }
+
+    /* Panel lateral de chat */
+    .chat-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: var(--sidebar-width);
+        height: 100vh;
+        background-color: white;
+        color: #202124;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #dadce0;
+    }
+
+    .chat-title {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .close-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+    }
+
+    .chat-settings {
+        padding: 16px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dadce0;
+    }
+
+    .settings-text {
+        color: #5f6368;
+        font-size: 14px;
+        text-align: center;
+        margin: 8px 0;
+    }
+
+    .chat-input-container {
+        margin-top: auto;
+        padding: 16px;
+        border-top: 1px solid #dadce0;
+    }
+
+    .chat-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #f8f9fa;
+        border-radius: 24px;
+        padding: 8px 16px;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: none;
+        background: none;
+        outline: none;
+        padding: 8px;
+        color: #202124;
+    }
+
+    .send-button {
+        background: none;
+        border: none;
+        color: #1a73e8;
+        cursor: pointer;
+    }
+
+    /* Toggle switch */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 24px;
+        float: right;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked+.slider {
+        background-color: #1a73e8;
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(16px);
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
+<div class="main-container">
+    <!-- Contenido central -->
+    <div class="center-content">
+        <div class="avatar-container">
+            D
+            <div class="avatar-controls">
+                <button class="avatar-control-btn">
+                    <i class="fas fa-thumbtack"></i>
+                </button>
+                <button class="avatar-control-btn">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="video-container">
+        <video id="localVideo" autoplay muted></video>
+        <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <!-- Información inferior -->
+    <div class="bottom-info">
+        <div class="user-name">Deiby Potosí</div>
+        <div class="meeting-code">swu-fgwj-fev</div>
+    </div>
+
+    <!-- Barra de controles -->
+    <div class="controls-bar mt-4">
+        <div class="control-group">
+            <button class="control-button" title="Toggle microphone" onclick="toggleMic()">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="control-button" title="Toggle camera" onclick="toggleCam()">
+                <i class="fas fa-video"></i>
+            </button>
+        </div>
+
+        <div class="control-group">
+            <button class="control-button" title="Raise hand">
+                <i class="fas fa-hand-paper"></i>
+            </button>
+            <button class="control-button" title="Share screen">
+                <i class="fas fa-share-square"></i>
+            </button>
+            <button class="control-button" title="More options">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+            <button class="control-button" title="Grid view">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="control-button" title="Chat">
+                <i class="fas fa-comment-alt"></i>
+            </button>
+            <button class="control-button" title="Participants">
+                <i class="fas fa-users"></i>
+            </button>
+            <button class="control-button red" title="End call">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Panel lateral de chat -->
+    <div class="chat-panel">
+        <!-- Cabecera del chat -->
+        <div class="chat-header">
+            <span class="chat-title">Mensajes en la llamada</span>
+            <button class="close-button" onclick="toggleChat()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+
+        <!-- Área de mensajes -->
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <!-- Entrada de chat -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Envía un mensaje a todos">
+                <button class="send-button" onclick="sendMessage()" id="sendButton">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+
+
+</div>
+
+<script>
+const socket = io("http://localhost:3000");
+let roomId = null;
+let peerConnection;
+let localStream;
+const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+// ✅ Obtener roomId desde la URL si existe
+const urlParams = new URLSearchParams(window.location.search);
+roomId = urlParams.get("roomId");
+
+// ✅ Verificar si los elementos existen antes de usarlos
+const chatInput = document.getElementById("chatInput");
+const chatMessages = document.getElementById("chatMessages");
+const roomStatus = document.getElementById("roomStatus");
+
+// ✅ Conectar al servidor WebSocket
+socket.on("connect", () => console.log("✅ Conectado con ID:", socket.id));
+socket.on("connect_error", (error) => console.error("❌ Error de conexión:", error));
+
+// ✅ Unirse automáticamente a la sala si existe en la URL
+if (roomId) {
+    if (roomStatus) roomStatus.innerText = `Unido a la sala: ${roomId}`;
+    socket.emit("join-room", roomId);
+}
+
+// ✅ Evento cuando se une a la sala
+socket.on("room-joined", (id) => {
+    roomId = id;
+    if (roomStatus) roomStatus.innerText = `En la sala: ${roomId}`;
+    startCall();
+});
+
+// ✅ Escuchar mensajes de chat
+socket.on("receive-message", ({ message, user }) => {
+    if (chatMessages) {
+        chatMessages.innerHTML += `<p><strong>${user}:</strong> ${message}</p>`;
+        scrollToBottom();
+    }
+});
+
+// ✅ Enviar mensaje con Enter
+if (chatInput) {
+    chatInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+// ✅ Función para enviar mensaje
+function sendMessage() {
+    if (!chatInput) return;
+    const message = chatInput.value.trim();
+    if (message && roomId) {
+        socket.emit("send-message", { roomId, message, user: socket.id });
+        chatInput.value = ""; // Limpiar input después de enviar
+    }
+}
+
+// ✅ Mantener scroll del chat siempre abajo
+function scrollToBottom() {
+    if (chatMessages) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
+
+
+navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(stream => {
+        localStream = stream;
+        document.getElementById("localVideo").srcObject = stream;
+    })
+    .catch(error => console.error(" Error accediendo a la cámara/micrófono:", error));
+
+// ✅ Iniciar llamada
+async function startCall() {
+    try {
+        if (!localStream) {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            document.getElementById("localVideo").srcObject = localStream;
+        }
+
+        peerConnection = new RTCPeerConnection(servers);
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+        peerConnection.ontrack = event => {
+            document.getElementById("remoteVideo").srcObject = event.streams[0];
+        };
+
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit("ice-candidate", { roomId, candidate: event.candidate });
+            }
+        };
+
+        if (!urlParams.get("roomId")) { // ✅ Solo el creador envía la oferta
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit("offer", { roomId, offer });
+        }
+    } catch (error) {
+        console.error("❌ Error al iniciar la llamada:", error);
+    }
+}
+
+socket.on("offer", async ({ offer }) => {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit("answer", { roomId, answer });
+});
+
+
+socket.on("answer", async ({ answer }) => {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+socket.on("ice-candidate", ({ candidate }) => {
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+
+function toggleMic() {
+    localStream.getAudioTracks()[0].enabled = !localStream.getAudioTracks()[0].enabled;
+}
+
+function toggleCam() {
+    localStream.getVideoTracks()[0].enabled = !localStream.getVideoTracks()[0].enabled;
+}
+
+</script>
