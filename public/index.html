@@ -4,35 +4,40 @@
 <p id="roomLink"></p>
 
 <script>
-    const socket = io("https://33a8-190-69-48-119.ngrok-free.app");
+    const socket = io("https://be59-190-69-48-119.ngrok-free.app");
 
     function createRoom() {
         const role = "doctor";
-        console.log("Rol:", role);
-        socket.emit("create-room", role); 
+        console.log("🛠️ Creando sala con rol:", role);
+        socket.emit("create-room", role);
     }
 
     function joinRoom() {
-        const roomId = prompt("Ingresa el ID de la sala:");
+        const roomId = prompt("🔑 Ingresa el ID de la sala:");
         if (roomId) {
             const role = "paciente";
-            console.log("Rol:", role);
+            console.log("🔗 Uniéndose a la sala:", roomId, "como", role);
             socket.emit("join-room", { roomId, role });
         }
     }
-    socket.on("room-created", (roomId) => {
-    console.log("Evento room-created recibido con ID:", roomId); 
-    const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}`;
-    document.getElementById("roomLink").innerHTML = `
-        <a href="${roomLink}" target="_blank">${roomLink}</a>
-        <button onclick="copyToClipboard('${roomLink}')">Copiar</button>
-    `;
-});
 
+    // ✅ Recibir la respuesta del servidor con el ID de la sala creada
+    socket.on("room-created", (roomId) => {
+        console.log("✅ Sala creada con ID:", roomId);
+        
+        // 📌 Generar un enlace dinámico para compartir
+        const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}`;
+        document.getElementById("roomLink").innerHTML = `
+            <a href="${roomLink}" target="_blank">${roomLink}</a>
+            <button onclick="copyToClipboard('${roomLink}')">Copiar</button>
+        `;
+    });
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert("Enlace copiado");
+            alert("📋 Enlace copiado al portapapeles");
+        }).catch(err => {
+            console.error("❌ Error al copiar:", err);
         });
     }
 </script>

@@ -38,9 +38,9 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localVideo.srcObject = localStream;
                 localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-                console.log("🎥 Cámara y micrófono activados");
+                console.log(" Cámara y micrófono activados");
             } catch (error) {
-                console.error("❌ Error al obtener la cámara/micrófono:", error);
+                console.error(" Error al obtener la cámara/micrófono:", error);
             }
         }
 
@@ -50,26 +50,26 @@
         peerConnection.ontrack = event => {
             if (!remoteVideo.srcObject) {
                 remoteVideo.srcObject = event.streams[0];
-                console.log("📡 Stream remoto recibido");
+                console.log(" Stream remoto recibido");
             }
         };
 
         // Manejo de ICE candidates
         peerConnection.onicecandidate = event => {
             if (event.candidate) {
-                console.log("📤 Enviando candidato ICE:", event.candidate);
+                console.log(" Enviando candidato ICE:", event.candidate);
                 socket.emit("candidate", event.candidate);
             }
         };
 
         // Estado de conexión WebRTC para depuración
         peerConnection.onconnectionstatechange = () => {
-            console.log("🔗 Estado de conexión WebRTC:", peerConnection.connectionState);
+            console.log("Estado de conexión WebRTC:", peerConnection.connectionState);
         };
 
         // Botón para iniciar la llamada
         startCallBtn.addEventListener("click", async () => {
-            console.log("📞 Iniciando llamada...");
+            console.log("Iniciando llamada...");
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             socket.emit("offer", offer);
@@ -78,7 +78,7 @@
 
         // Recibir oferta y responder
         socket.on("offer", async offer => {
-            console.log("📩 Oferta recibida:", offer);
+            console.log("Oferta recibida:", offer);
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
@@ -88,17 +88,17 @@
 
         // Recibir respuesta
         socket.on("answer", async answer => {
-            console.log("📩 Respuesta recibida:", answer);
+            console.log("Respuesta recibida:", answer);
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
         });
 
         // Recibir candidatos ICE
         socket.on("candidate", async candidate => {
-            console.log("📩 Candidato ICE recibido:", candidate);
+            console.log("Candidato ICE recibido:", candidate);
             try {
                 await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
             } catch (error) {
-                console.error("❌ Error al agregar candidato ICE:", error);
+                console.error(" Error al agregar candidato ICE:", error);
             }
         });
     </script>
