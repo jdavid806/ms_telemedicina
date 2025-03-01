@@ -7,11 +7,12 @@ import { v4 as uuidv4 } from "uuid"; // Para generar IDs únicos de sala
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: { origin: "*" },
+    path: "/telemedicina/socket.io" 
 });
 
 app.use(cors());
-app.use(express.static("public"));
+// app.use(express.static("public"));
 
 io.on("connection", (socket) => {
     console.log("Usuario conectado:", socket.id);

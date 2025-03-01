@@ -1,20 +1,29 @@
-# Usa Node.js 22 como imagen base
+# Usa una versión estable de Node.js
 FROM node:22
 
-# Directorio de trabajo dentro del contenedor
+# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia package.json y package-lock.json (para evitar reinstalar dependencias innecesarias)
+# Copia package.json y package-lock.json para instalar dependencias
 COPY package*.json ./
 
-# Instala dependencias (evita instalar las dev en producción)
-RUN npm install --only=production
+# Instala dependencias en producción
+RUN npm ci --only=production
 
-# Copia el resto del código al contenedor
+# Asegura que TypeScript está instalado para poder compilar
+RUN npm install -g typescript
+
+# Copia el resto del código
 COPY . .
 
-# Expone el puerto de la app
+# Compila TypeScript a JavaScript
+RUN npm run build
+
+# Establece la variable de entorno para producción
+ENV NODE_ENV=production
+
+# Expone el puerto de la aplicación
 EXPOSE 3000
 
-# Comando de inicio en producción
+# Comando de inicio
 CMD ["npm", "start"]
