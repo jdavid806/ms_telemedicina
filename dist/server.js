@@ -15,7 +15,7 @@ const io = new socket_io_1.Server(server, {
     path: "/telemedicina/socket.io"
 });
 app.use((0, cors_1.default)());
-// app.use(express.static("public"));
+app.use(express_1.default.static("public"));
 io.on("connection", (socket) => {
     console.log("Usuario conectado:", socket.id);
     socket.on("create-room", () => {

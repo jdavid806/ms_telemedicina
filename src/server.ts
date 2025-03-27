@@ -12,7 +12,7 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-// app.use(express.static("public"));
+app.use(express.static("public"));
 
 io.on("connection", (socket) => {
     console.log("Usuario conectado:", socket.id);

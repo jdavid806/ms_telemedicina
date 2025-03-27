@@ -4,7 +4,16 @@
 <p id="roomLink"></p>
 
 <script>
-    const socket = io("https://be59-190-69-48-119.ngrok-free.app");
+    // const socket = io("https://dev.medicalsoft.ai", {
+    //     path: "/telemedicina/socket.io",
+    //     transports: ["websocket"]  // Forzar WebSocket y evitar polling
+    // });
+
+    const socket = io("http://localhost:3000", {
+        path: "/telemedicina/socket.io",
+        transports: ["websocket"]  // Forzar WebSocket y evitar polling
+    });
+
 
     function createRoom() {
         const role = "doctor";
@@ -21,12 +30,10 @@
         }
     }
 
-    // ✅ Recibir la respuesta del servidor con el ID de la sala creada
     socket.on("room-created", (roomId) => {
         console.log("✅ Sala creada con ID:", roomId);
-        
-        // 📌 Generar un enlace dinámico para compartir
-        const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}`;
+        const roomLink = `${window.location.origin}/prueba.html?roomId=${roomId}&role=doctor`;
+
         document.getElementById("roomLink").innerHTML = `
             <a href="${roomLink}" target="_blank">${roomLink}</a>
             <button onclick="copyToClipboard('${roomLink}')">Copiar</button>
@@ -35,9 +42,7 @@
 
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            alert("📋 Enlace copiado al portapapeles");
-        }).catch(err => {
-            console.error("❌ Error al copiar:", err);
-        });
+            alert("Enlace copiado al portapapeles");
+        }).catch(err => console.error("Error al copiar:", err));
     }
 </script>
