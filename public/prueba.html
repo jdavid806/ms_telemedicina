@@ -8,265 +8,10 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Phoenix CSS (placeholder - you would include your actual Phoenix template CSS) -->
-    <link rel="stylesheet" href="assets/css/phoenix.css">
+    <!-- <link rel="stylesheet" href="assets/css/phoenix.css">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body {
-            background-color: #202124;
-            color: #fff;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .main-container {
-            display: flex;
-            height: calc(100vh - 70px);
-        }
-
-        .video-container {
-            flex: 1;
-            position: relative;
-            height: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .chat-container {
-            width: 320px;
-            background-color: #292a2d;
-            border-left: 1px solid #3c4043;
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s ease;
-        }
-
-        .chat-container.hidden {
-            width: 0;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            padding: 16px;
-            border-bottom: 1px solid #3c4043;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-        }
-
-        .chat-input {
-            padding: 16px;
-            border-top: 1px solid #3c4043;
-        }
-
-        .message {
-            margin-bottom: 16px;
-            max-width: 85%;
-        }
-
-        .message-sent {
-            margin-left: auto;
-            background-color: #1a73e8;
-            border-radius: 18px 18px 4px 18px;
-            padding: 10px 14px;
-        }
-
-        .message-received {
-            margin-right: auto;
-            background-color: #3c4043;
-            border-radius: 18px 18px 18px 4px;
-            padding: 10px 14px;
-        }
-
-        .message-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 4px;
-            text-align: right;
-        }
-
-        .message-sender {
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .video-wrapper {
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #3c4043;
-        }
-
-        .video-placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #3c4043;
-            color: #fff;
-        }
-
-        .video-controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(32, 33, 36, 0.8);
-            padding: 16px;
-            border-radius: 0 0 8px 8px;
-        }
-
-        .control-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background-color: #3c4043;
-            color: #fff;
-            border: none;
-            margin: 0 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .control-btn:hover {
-            background-color: #4a4d51;
-        }
-
-        .control-btn.danger {
-            background-color: #ea4335;
-        }
-
-        .control-btn.danger:hover {
-            background-color: #d33426;
-        }
-
-        .user-info {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .header {
-            height: 70px;
-            border-bottom: 1px solid #3c4043;
-        }
-
-        .footer {
-            height: 70px;
-            border-top: 1px solid #3c4043;
-        }
-
-        .main-video {
-            height: 100%;
-        }
-
-        .pip-video {
-            position: absolute;
-            width: 180px;
-            height: 120px;
-            right: 20px;
-            bottom: 80px;
-            border: 2px solid #fff;
-            border-radius: 8px;
-            z-index: 10;
-        }
-
-        .meeting-info {
-            font-size: 18px;
-            font-weight: 500;
-        }
-
-        .time-info {
-            color: #9aa0a6;
-            font-size: 14px;
-        }
-
-        .chat-toggle-btn {
-            background-color: #3c4043;
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 8px;
-        }
-
-        .chat-toggle-btn:hover {
-            background-color: #4a4d51;
-        }
-
-        .input-message {
-            background-color: #3c4043;
-            border: none;
-            color: #fff;
-            border-radius: 24px;
-            padding: 10px 16px;
-        }
-
-        .input-message:focus {
-            outline: none;
-            background-color: #4a4d51;
-            color: #fff;
-        }
-
-        .send-btn {
-            background: none;
-            border: none;
-            color: #8ab4f8;
-            font-size: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .chat-container {
-                position: absolute;
-                right: 0;
-                top: 0;
-                height: 100%;
-                z-index: 100;
-            }
-
-            .pip-video {
-                width: 120px;
-                height: 80px;
-                right: 10px;
-                bottom: 70px;
-            }
-
-            .control-btn {
-                width: 40px;
-                height: 40px;
-                margin: 0 4px;
-            }
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            border-top: 1px solid #3c4043;
-            background: rgba(32, 33, 36, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/videoLLamada.css">
 </head>
 
 <body>
@@ -371,189 +116,119 @@
     </div>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.4.1/socket.io.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
     <!-- Phoenix JS (placeholder - you would include your actual Phoenix template JS) -->
-    <script src="assets/js/phoenix.js"></script>
+    <!-- <script src="assets/js/phoenix.js"></script> -->
 
 </body>
 
 </html>
 
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-    crossorigin="anonymous"></script>
-
-
 <script>
-    // Funcionalidad del chat UI
     const chatToggleBtn = document.getElementById('chatToggleBtn');
     const closeChatBtn = document.getElementById('closeChatBtn');
     const chatContainer = document.getElementById('chatContainer');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
     const sendMessageBtn = document.getElementById('sendMessageBtn');
 
     const urlParams = new URLSearchParams(window.location.search);
+
     const roomId = urlParams.get("roomId");
     const userRole = urlParams.get("role");
+    let userName = userRole === 'doctor' ? 'Doctor' : 'Paciente';
+
+
+
+    // Configuración de Socket.io
     const socket = io("http://localhost:3000", {
         path: "/telemedicina/socket.io",
-        transports: ["websocket"]  // Forzar WebSocket y evitar polling
+        transports: ["websocket"],
+        query: { roomId, userRole }
     });
 
-    // Asegurarse de que el cliente esté conectado correctamente
+    if (roomId) {
+        console.log(`📡 FRONTEND: Solicitando unirse a la sala ${roomId}`);
+        socket.emit("join-room", { roomId });
+    }
 
+    // Debugging: Mostrar todos los eventos recibidos
     socket.on("connect", () => {
-        console.log("Conectado al servidor WebSocket con ID:", socket.id);
-
-        // Establecer el rol del usuario en el backend
-        socket.emit("set-role", userRole); // Enviar el rol al servidor
+        console.log("✅ Conectado a Socket.io con ID:", socket.id);
     });
 
-    // Configuración de WebRTC
-    const peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-    });
-    const localVideo = document.getElementById("localVideo");
-    const remoteVideo = document.getElementById("remoteVideo");
-    let localStream;
+    // Manejo de la interfaz de chat
+    chatToggleBtn.addEventListener('click', () => chatContainer.classList.toggle('hidden'));
+    closeChatBtn.addEventListener('click', () => chatContainer.classList.add('hidden'));
 
-    async function getMedia() {
-        try {
-            // Intentar acceder a cámara y micrófono
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        } catch (error) {
-            console.warn("Error accediendo a cámara y micrófono:", error);
+    const sendMessage = () => {
+        const message = messageInput.value.trim();
+        console.log(`✉️ SERVIDOR: Emitiendo mensaje "${message}" a la sala ${roomId}`);
 
-            try {
-                // Si falla, intentar solo con audio
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                alert("⚠️ No se encontró cámara, pero el micrófono está activado.");
-            } catch (audioError) {
-                console.error("Error accediendo al micrófono:", audioError);
-                alert("❌ No se pudo acceder a la cámara ni al micrófono. Verifique los permisos del navegador.");
-                return;
-            }
-        }
+        if (!message || !roomId) return;
 
-        // Asignar el stream de audio/video si está disponible
-        if (localStream) {
-            localVideo.srcObject = localStream;
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-        }
-    }
+        socket.emit("send-message", {
+            roomId,
+            message,
+            user: userName
+        });
 
-    // Manejo de ICE Candidates
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            socket.emit("candidate", { roomId, candidate: event.candidate });
-        }
+        addMessageToChat(message, userName, true);
+        messageInput.value = "";
+        messageInput.focus();
     };
 
-    // Manejo de Media Stream remoto
-    peerConnection.ontrack = event => {
-        if (!remoteVideo.srcObject) {
-            remoteVideo.srcObject = event.streams[0];
-        }
-    };
+    // Función para añadir mensajes al chat
+    function addMessageToChat(message, sender, isOwnMessage = false) {
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("message", isOwnMessage ? "message-sent" : "message-received");
 
-    // Manejo de señales WebRTC con Socket.IO
-    socket.on("offer", async offer => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        socket.emit("answer", { roomId, answer });
-    });
+        messageElement.innerHTML = `
+        ${!isOwnMessage ? `<div class="message-sender">${sender}</div>` : `<div class="message-sender">Tú</div>`}
+        <div>${message}</div>
+        <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+    `;
 
-    socket.on("answer", async answer => {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-    });
-
-    socket.on("candidate", async candidate => {
-        try {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (error) {
-            console.error("❌ Error al agregar candidato ICE:", error);
-        }
-    });
-
-    // Iniciar llamada
-    async function startCall() {
-        try {
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            socket.emit("offer", { roomId, offer });
-        } catch (error) {
-            console.error("❌ Error al iniciar la llamada:", error);
-        }
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    // Funcionalidad del chat
-    const chatInput = document.getElementById("messageInput");
-    const chatMessages = document.getElementById("chatMessages");
-
-    // Escuchar los mensajes recibidos en la sala
-    socket.on("receive-message", ({ message, user }) => {
-        console.log("📥 Mensaje recibido en el cliente:", message, "de:", user);
-
-        // Verifica si chatMessages está definido
-        if (chatMessages) {
-            chatMessages.innerHTML += `<div class="chat-message"><strong>${user}:</strong> ${message}</div>`;
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        } else {
-            console.warn("El elemento chatMessages no está definido.");
-        }
-    });
-
-    function sendMessage() {
-        const message = chatInput.value.trim();
-        if (!message) return;
-
-        socket.emit("send-message", { roomId, message, user: socket.id });
-        console.log("📤 Mensaje enviado:", message);
-
-
-        chatMessages.innerHTML += `
-            <div class="chat-message self">
-                <strong>Tú:</strong> ${message}
-            </div>`;
-
-        chatInput.value = "";
-        scrollToBottom();
-    }
-
-
-    chatInput.addEventListener("keypress", event => {
-        if (event.key === "Enter") {
-            event.preventDefault();
+    // Event listeners
+    sendMessageBtn.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
             sendMessage();
         }
     });
 
-    chatToggleBtn.addEventListener('click', () => chatContainer.classList.toggle('hidden'));
-    closeChatBtn.addEventListener('click', () => chatContainer.classList.add('hidden'));
+    // Escuchar mensajes entrantes
+    socket.on("receive-message", ({ message, user, senderId }) => {
+        console.log(`📥 FRONTEND: Mensaje recibido de ${user} (${senderId}): ${message}`);
 
-    // Actualización de la hora
-    function updateTime() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        document.querySelector('.time-info').textContent = timeString;
-    }
-    setInterval(updateTime, 60000);
-    updateTime();
+        // Evita duplicar el mensaje si fue enviado por el mismo usuario
+        if (senderId === socket.id) return;
 
-    // Controles de micrófono y cámara
-    const micButton = document.querySelector('.control-btn:nth-child(1)');
-    const cameraButton = document.querySelector('.control-btn:nth-child(2)');
-
-    micButton.addEventListener('click', function () {
-        this.querySelector('i').classList.toggle('fa-microphone');
-        this.querySelector('i').classList.toggle('fa-microphone-slash');
+        addMessageToChat(message, user, false);
     });
 
-    cameraButton.addEventListener('click', function () {
-        this.querySelector('i').classList.toggle('fa-video');
-        this.querySelector('i').classList.toggle('fa-video-slash');
+
+
+    // Configuración WebRTC (opcional)
+    const peerConnection = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
     });
 
-    // Obtener medios al cargar la página
+    // Inicialización de medios
+    // async function setupMedia() {
+    //     try {
+    //         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    //         stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    //     } catch (error) {
+    //         console.error("Error al acceder a medios:", error);
+    //     }
+    // }
+
+    // Inicializar
+    // setupMedia();
 </script>
