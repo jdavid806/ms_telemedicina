@@ -45,6 +45,7 @@ function handleStream(stream) {
     videoElement.srcObject = stream;
     videoElement.autoplay = true;
     videoElement.playsInline = true;
+    videoElement.muted = true;
 
     document.querySelector(".pip-video .video-wrapper").innerHTML = "";
     document.querySelector(".pip-video .video-wrapper").appendChild(videoElement);
