@@ -2,24 +2,44 @@ const peerConnection = new RTCPeerConnection({
     iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 });
 
+let localStream; // 📌 Guardar la referencia del stream de la cámara
 
 // Capturar medios del usuario
 async function setupMedia() {
     let constraints = {
-        video: { facingMode: "user" }, // 📷 Usa la cámara frontal en móviles
-        audio: true
+        video: true,  
+        audio: true   
     };
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         handleStream(stream);
+        return stream;
     } catch (error) {
         console.warn("⚠️ No se pudo acceder al video:", error);
+
+        // 🔄 Reintentar solo con audio si el video falla
+        try {
+            const audioOnlyStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            return audioOnlyStream;
+        } catch (audioError) {
+            console.error("❌ No se pudo obtener ni el audio ni el video.", audioError);
+            return null;
+        }
     }
 }
 
+
+
 function handleStream(stream) {
-    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    stream.getTracks().forEach(track => {
+        const sender = peerConnection.getSenders().find(s => s.track?.kind === track.kind);
+        if (sender) {
+            sender.replaceTrack(track);  // ✅ Reemplazar la pista existente en lugar de agregarla de nuevo
+        } else {
+            peerConnection.addTrack(track, stream);  // ✅ Solo agregar si no existe
+        }
+    });
 
     const videoElement = document.createElement("video");
     videoElement.srcObject = stream;
@@ -30,43 +50,27 @@ function handleStream(stream) {
     document.querySelector(".pip-video .video-wrapper").appendChild(videoElement);
 }
 
+
+// 🔹 Manejar pistas remotas (evitar duplicados)
 peerConnection.ontrack = (event) => {
     if (event.track.kind === "video") {
-        const remoteVideo = document.createElement("video");
-        remoteVideo.srcObject = new MediaStream([event.track]);
-        remoteVideo.autoplay = true;
-        remoteVideo.playsInline = true;
-
-        document.querySelector(".main-video .video-wrapper").innerHTML = "";
-        document.querySelector(".main-video .video-wrapper").appendChild(remoteVideo);
+        console.log("📺 Recibiendo pista de video:", event.track);
+        const remoteVideo = document.querySelector(".main-video video");
+        if (remoteVideo) {
+            // Actualiza el stream completo para refrescar la vista
+            remoteVideo.srcObject = event.streams[0];
+        } else {
+            // Si no existe, créalo
+            const newVideo = document.createElement("video");
+            newVideo.srcObject = event.streams[0];
+            newVideo.autoplay = true;
+            newVideo.playsInline = true;
+            document.querySelector(".main-video .video-wrapper").innerHTML = "";
+            document.querySelector(".main-video .video-wrapper").appendChild(newVideo);
+        }
     }
 };
 
-setupMedia();
-
-// Manejar pistas remotas (audio/video)
-peerConnection.ontrack = (event) => {
-    console.log("🎧 Se recibió una nueva pista:", event.track.kind);
-
-    if (event.track.kind === "video") {
-        const remoteVideo = document.createElement("video");
-        remoteVideo.srcObject = new MediaStream([event.track]);
-        remoteVideo.autoplay = true;
-        remoteVideo.playsInline = true;
-
-        const mainContainer = document.querySelector(".main-video .video-wrapper");
-        mainContainer.innerHTML = "";
-        mainContainer.appendChild(remoteVideo);
-
-        console.log("📺 Video remoto agregado.");
-    } else if (event.track.kind === "audio") {
-        const remoteAudio = document.createElement("audio");
-        remoteAudio.srcObject = new MediaStream([event.track]);
-        remoteAudio.autoplay = true;
-        document.body.appendChild(remoteAudio);
-        console.log("🔊 Audio remoto agregado.");
-    }
-};
 
 // Enviar candidatos ICE
 peerConnection.onicecandidate = (event) => {
@@ -77,7 +81,9 @@ peerConnection.onicecandidate = (event) => {
 
 // Recibir oferta y responder
 socket.on("offer", async (offer) => {
+    console.log("📥 Oferta recibida.");
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     socket.emit("answer", { roomId, answer });
@@ -85,20 +91,91 @@ socket.on("offer", async (offer) => {
 
 // Recibir respuesta
 socket.on("answer", async (answer) => {
+    console.log("📥 Respuesta recibida.");
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
 });
 
 // Recibir candidatos ICE
-socket.on("candidate", (candidate) => {
-    peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+socket.on("candidate", async (candidate) => {
+    try {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+    } catch (error) {
+        console.warn("⚠️ Error al agregar candidato ICE:", error);
+    }
 });
 
-// Crear oferta si es el primero en la sala
 async function call() {
+    console.log("📞 Iniciando llamada...");
+
+    if (!localStream) {
+        localStream = await setupMedia();
+    }
+
+    if (!localStream) {
+        console.error("❌ No se pudo obtener el stream de la cámara.");
+        return;
+    }
+
+    localStream.getTracks().forEach(track => {
+        const sender = peerConnection.getSenders().find(s => s.track?.kind === track.kind);
+        if (!sender) {
+            peerConnection.addTrack(track, localStream);
+        }
+    });
+    
+
+   
+    handleStream(localStream);
+
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     socket.emit("offer", { roomId, offer });
+    console.log("📤 Oferta enviada.");
 }
 
+async function shareScreen() {
+    try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const newScreenTrack = screenStream.getVideoTracks()[0];
+
+        let videoSender = peerConnection.getSenders().find(s => s.track?.kind === "video");
+
+        // Si no hay sender, agregar la pista de pantalla directamente
+        if (!videoSender) {
+            console.log("No se encontró sender de video, agregando la pista de pantalla.");
+            peerConnection.addTrack(newScreenTrack, screenStream);
+
+            // Renegociar la conexión
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit("offer", { roomId, offer });
+        } else {
+            // Si existe, reemplazar la pista
+            await videoSender.replaceTrack(newScreenTrack);
+            console.log("🖥️ Compartiendo pantalla...");
+
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit("offer", { roomId, offer });
+        }
+
+        // Cuando se deja de compartir la pantalla, se puede intentar volver a agregar la cámara si estuviese disponible
+        newScreenTrack.onended = async () => {
+            console.log("La pantalla compartida se detuvo.");
+            // Aquí podrías definir qué hacer cuando se deja de compartir
+        };
+
+    } catch (error) {
+        console.error("❌ Error al compartir pantalla:", error);
+    }
+}
+
+
+
+
+// Iniciar cámara/micrófono al cargar
 setupMedia();
-document.querySelector(".control-btn[title='Present now']").addEventListener("click", call);
+
+// 📌 Vincular botones
+document.getElementById("startCallBtn").addEventListener("click", call);
+document.querySelector(".control-btn[title='Present now']").addEventListener("click", shareScreen);
