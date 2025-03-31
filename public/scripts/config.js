@@ -15,7 +15,23 @@ const socket = io("https://6b67-152-202-84-100.ngrok-free.app", {
     query: { roomId, userRole }
 });
 
-// Vincular los botones a sus respectivas funciones
+
+function updateTime() {
+    const timeElem = document.querySelector('.time-info');
+    if (timeElem) {
+      // Formatea la hora en formato local, por ejemplo: "12:07 PM"
+      const now = new Date();
+      const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      timeElem.textContent = formattedTime;
+    }
+  }
+
+  // Actualizar al cargar la página
+  updateTime();
+  // Actualizar cada minuto
+  setInterval(updateTime, 60000);
+
+
 document.querySelector('.control-btn[title="Mute microphone"]').addEventListener("click", toggleMute);
 document.querySelector('.control-btn[title="Turn off camera"]').addEventListener("click", toggleCamera);
 document.querySelector('.control-btn.danger[title="Leave call"]').addEventListener("click", leaveCall);

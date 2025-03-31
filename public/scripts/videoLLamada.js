@@ -7,8 +7,8 @@ let localStream; // 📌 Guardar la referencia del stream de la cámara
 // Capturar medios del usuario
 async function setupMedia() {
     let constraints = {
-        video: true,  
-        audio: true   
+        video: true,
+        audio: true
     };
 
     try {
@@ -123,9 +123,9 @@ async function call() {
             peerConnection.addTrack(track, localStream);
         }
     });
-    
 
-   
+
+
     handleStream(localStream);
 
     const offer = await peerConnection.createOffer();
@@ -141,7 +141,6 @@ async function shareScreen() {
 
         let videoSender = peerConnection.getSenders().find(s => s.track?.kind === "video");
 
-        // Si no hay sender, agregar la pista de pantalla directamente
         if (!videoSender) {
             console.log("No se encontró sender de video, agregando la pista de pantalla.");
             peerConnection.addTrack(newScreenTrack, screenStream);
@@ -151,7 +150,6 @@ async function shareScreen() {
             await peerConnection.setLocalDescription(offer);
             socket.emit("offer", { roomId, offer });
         } else {
-            // Si existe, reemplazar la pista
             await videoSender.replaceTrack(newScreenTrack);
             console.log("🖥️ Compartiendo pantalla...");
 
@@ -160,12 +158,37 @@ async function shareScreen() {
             socket.emit("offer", { roomId, offer });
         }
 
-        // Cuando se deja de compartir la pantalla, se puede intentar volver a agregar la cámara si estuviese disponible
+        // Actualizar la vista local para mostrar la pantalla compartida
+        const pipWrapper = document.querySelector(".pip-video .video-wrapper");
+        pipWrapper.innerHTML = ""; // Limpiar contenido previo
+        const previewVideo = document.createElement("video");
+        previewVideo.srcObject = screenStream;
+        previewVideo.autoplay = true;
+        previewVideo.playsInline = true;
+        previewVideo.muted = true; // Para evitar eco
+        pipWrapper.appendChild(previewVideo);
+
+        // Cuando se deje de compartir la pantalla, volver a la cámara (si está disponible)
         newScreenTrack.onended = async () => {
             console.log("La pantalla compartida se detuvo.");
-            // Aquí podrías definir qué hacer cuando se deja de compartir
+            const cameraStream = await setupMedia();
+            if (cameraStream) {
+                if (videoSender) {
+                    await videoSender.replaceTrack(cameraStream.getVideoTracks()[0]);
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                    socket.emit("offer", { roomId, offer });
+                }
+                // Restaurar la vista local a la cámara:
+                pipWrapper.innerHTML = "";
+                const localVideo = document.createElement("video");
+                localVideo.srcObject = cameraStream;
+                localVideo.autoplay = true;
+                localVideo.playsInline = true;
+                localVideo.muted = true;
+                pipWrapper.appendChild(localVideo);
+            }
         };
-
     } catch (error) {
         console.error("❌ Error al compartir pantalla:", error);
     }
@@ -176,6 +199,8 @@ async function shareScreen() {
 
 // Iniciar cámara/micrófono al cargar
 setupMedia();
+
+
 
 // 📌 Vincular botones
 document.getElementById("startCallBtn").addEventListener("click", call);

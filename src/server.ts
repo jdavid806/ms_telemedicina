@@ -28,21 +28,39 @@ io.on("connection", (socket) => {
     // Unirse a una sala
     socket.on("join-room", ({ roomId }) => {
         console.log(`📩 SERVIDOR: Recibido join-room para ${roomId} de ${socket.id}`);
-    
         socket.join(roomId);
-        
+
         const usersInRoom = io.sockets.adapter.rooms.get(roomId);
         console.log(`👥 Usuarios en la sala ${roomId}:`, usersInRoom ? Array.from(usersInRoom) : []);
     });
-    
-    
 
     // Mensajería en la sala
     socket.on("send-message", ({ roomId, message, user }) => {
         console.log(`📤 SERVIDOR: Mensaje recibido de ${user} (${socket.id}): ${message}`);
         socket.to(roomId).emit("receive-message", { message, user, senderId: socket.id });
+
+        // 🚀 Detener la indicación de "escribiendo" cuando el usuario envía un mensaje
+        socket.to(roomId).emit("user-stopped-typing");
+    });
+
+    // Usuario está escribiendo
+    socket.on("typing", ({ roomId, user }) => {
+        socket.to(roomId).emit("user-typing", user, socket.id);
     });
     
+
+    // Usuario dejó de escribir
+    socket.on("stop-typing", ({ roomId }) => {
+        socket.to(roomId).emit("user-stopped-typing");
+    });
+
+    // 🛑 Cuando un usuario se desconecta, asegurarse de que su estado de "escribiendo" se detenga
+    socket.on("disconnect", () => {
+        console.log(`❌ Usuario desconectado: ${socket.id}`);
+        io.emit("user-stopped-typing");
+    });
+
+
     
     
 
