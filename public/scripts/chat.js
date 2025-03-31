@@ -7,7 +7,6 @@ const sendMessageBtn = document.getElementById('sendMessageBtn');
 const typingIndicator = document.getElementById("typingIndicator");
 
 if (roomId) {
-    console.log(`📡 FRONTEND: Solicitando unirse a la sala ${roomId}`);
     socket.emit("join-room", { roomId });
 }
 
@@ -22,30 +21,24 @@ const sendMessage = () => {
     const message = messageInput.value.trim();
     if (!message || !roomId) return;
 
-    console.log(`✉️ SERVIDOR: Emitiendo mensaje "${message}" a la sala ${roomId}`);
     socket.emit("send-message", { roomId, message, user: userName });
-
     addMessageToChat(message, userName, true);
     messageInput.value = "";
     messageInput.focus();
 };
 
-// Función para añadir mensajes al chat
 function addMessageToChat(message, sender, isOwnMessage = false) {
     const messageElement = document.createElement("div");
     messageElement.classList.add("message", isOwnMessage ? "message-sent" : "message-received");
-
     messageElement.innerHTML = `
         ${!isOwnMessage ? `<div class="message-sender">${sender}</div>` : `<div class="message-sender">Tú</div>`}
         <div>${message}</div>
         <div class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
     `;
-
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-// Event listeners
 sendMessageBtn.addEventListener("click", sendMessage);
 messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -54,65 +47,40 @@ messageInput.addEventListener("keydown", (e) => {
     }
 });
 
-// Escuchar mensajes entrantes
-socket.on("receive-message", ({ message, user, senderId }) => {
-    if (senderId === socket.id) return; // Evita duplicar el mensaje propio
-    console.log(`📥 FRONTEND: Mensaje recibido de ${user} (${senderId}): ${message}`);
-    addMessageToChat(message, user, false);
-});
-
-
-
-//Notificaciones
-
 let unreadMessages = 0;
 const originalTitle = document.title;
 
 socket.on("receive-message", ({ message, user, senderId }) => {
-    if (senderId !== socket.id) {
-        unreadMessages++;
-        document.title = `(${unreadMessages}) Nuevo mensaje - Telemedicina`;
-
-        // Restaurar el título cuando el usuario vuelve a la pestaña
-        window.addEventListener("focus", () => {
-            unreadMessages = 0;
-            document.title = originalTitle;
-        });
-    }
-
+    if (senderId === socket.id) return;
     addMessageToChat(message, user, false);
-});
+    
+    unreadMessages++;
+    document.title = `(${unreadMessages}) Nuevo mensaje - Telemedicina`;
 
-
-// Pedir permiso para notificaciones cuando se carga la página
-if (Notification.permission === "default") {
-    Notification.requestPermission().then(permission => {
-        console.log("Permiso de notificación:", permission);
+    window.addEventListener("focus", () => {
+        unreadMessages = 0;
+        document.title = originalTitle;
     });
-}
 
-socket.on("receive-message", ({ message, user, senderId }) => {
-    if (senderId !== socket.id && document.hidden) {
-        // Mostrar notificación si la pestaña no está activa
+    if (document.hidden && Notification.permission === "granted") {
         new Notification("Nuevo mensaje", {
             body: `${user}: ${message}`,
-            icon: "icono.png" // Puedes personalizar el ícono
+            icon: "icono.png"
         });
     }
-
-    addMessageToChat(message, user, false);
 });
 
+if (Notification.permission === "default") {
+    Notification.requestPermission();
+}
+
 socket.on("user-joined", (user) => {
-    console.log(`${user} se unió a la llamada.`);
     notificationSound.play();
 });
 
 socket.on("user-left", (user) => {
-    console.log(`${user} salió de la llamada.`);
     notificationSound.play();
 });
-
 
 
 

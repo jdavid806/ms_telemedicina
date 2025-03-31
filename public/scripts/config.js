@@ -9,7 +9,7 @@ let userName = userRole === 'doctor' ? 'Doctor' : 'Paciente';
 //     query: { roomId, userRole }
 // });
 
-const socket = io("https://6b67-152-202-84-100.ngrok-free.app", {
+const socket = io("https://d9be-152-202-84-100.ngrok-free.app", {
     path: "/telemedicina/socket.io",
     transports: ["websocket"],
     query: { roomId, userRole }

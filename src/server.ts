@@ -44,21 +44,21 @@ io.on("connection", (socket) => {
     });
 
     // Usuario está escribiendo
-    socket.on("typing", ({ roomId, user }) => {
-        socket.to(roomId).emit("user-typing", user, socket.id);
-    });
+    // socket.on("typing", ({ roomId, user }) => {
+    //     socket.to(roomId).emit("user-typing", user, socket.id);
+    // });
     
 
-    // Usuario dejó de escribir
-    socket.on("stop-typing", ({ roomId }) => {
-        socket.to(roomId).emit("user-stopped-typing");
-    });
+    // // Usuario dejó de escribir
+    // socket.on("stop-typing", ({ roomId }) => {
+    //     socket.to(roomId).emit("user-stopped-typing");
+    // });
 
     // 🛑 Cuando un usuario se desconecta, asegurarse de que su estado de "escribiendo" se detenga
-    socket.on("disconnect", () => {
-        console.log(`❌ Usuario desconectado: ${socket.id}`);
-        io.emit("user-stopped-typing");
-    });
+    // socket.on("disconnect", () => {
+    //     console.log(`❌ Usuario desconectado: ${socket.id}`);
+    //     io.emit("user-stopped-typing");
+    // });
 
 
     
