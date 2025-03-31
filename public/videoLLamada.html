@@ -1,5 +1,6 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
         }
     </style>
 </head>
+
 <body>
     <h2>Videollamada</h2>
     <div>
@@ -22,9 +24,9 @@
     <button id="startCall">Iniciar Llamada</button>
 
     <script>
-        const socket = io("https://33a8-190-69-48-119.ngrok-free.app");
-        const peerConnection = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        const socket = io("localhost:3000", {
+            path: "/telemedicina/socket.io",
+            transports: ["websocket"]  // Forzar WebSocket y evitar polling
         });
 
         const localVideo = document.getElementById("localVideo");
@@ -101,6 +103,26 @@
                 console.error(" Error al agregar candidato ICE:", error);
             }
         });
+    </script>
+</body>
+
+</html> -->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de Audio</title>
+</head>
+<body>
+    <h2>Prueba de Micrófono</h2>
+    <button onclick="startAudio()">Iniciar Audio</button>
+    <button onclick="stopAudio()">Detener Audio</button>
+    <audio id="audioPlayer" controls></audio>
+
+    <script>
+       
     </script>
 </body>
 </html>
